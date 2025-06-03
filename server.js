@@ -26,6 +26,44 @@ const champions = [
   "Zilean", "Zoe", "Zyra"
 ];
 
+// Масив символів для слотів
+const slotSymbols = [
+  "🍒", "🍊", "🍋", "🍇", "🍉", "🍓", "⭐", "💎", "🔔", "7️⃣", "💰", "🎰"
+];
+
+// Результати слотів з різними коефіцієнтами виграшу
+const slotResults = {
+  jackpot: { multiplier: 1000, message: "🎰 ДЖЕКПОТ! 🎰" },
+  triple: { multiplier: 100, message: "🔥 ПОТРІЙНА КОМБІНАЦІЯ! 🔥" },
+  double: { multiplier: 10, message: "✨ ПОДВІЙНА КОМБІНАЦІЯ! ✨" },
+  lose: { multiplier: 0, message: "😢 Спробуй ще раз!" }
+};
+
+// Дуельні фрази та результати
+const duelWeapons = ["⚔️", "🗡️", "🏹", "🔫", "🪓", "🔨", "⚡", "🔥", "❄️", "💀"];
+const duelActions = [
+  "завдав критичний удар",
+  "зробив ідеальний блок", 
+  "ухилився від атаки",
+  "контратакував",
+  "застосував спецздібність",
+  "зробив комбо атаку",
+  "активував берсерк режим",
+  "використав магію",
+  "зробив фінішер",
+  "переміг хитрістю"
+];
+const duelOutcomes = [
+  "Легендарна перемога! 🏆",
+  "Епічний бій! 🔥",
+  "Неймовірна битва! ⚡",
+  "Досконала техніка! 👑",
+  "Нищівна поразка! 💥",
+  "Героїчна перемога! 🌟",
+  "Майстерський поєдинок! 🎯",
+  "Фатальний удар! ⚰️"
+];
+
 // Масив пророцтв долі
 const fortunes = [
   "Ти здивуєш усіх сьогодні.",
@@ -173,6 +211,71 @@ app.use((req, res, next) => {
   next();
 });
 
+// Функція для дуелі
+function createDuel(player1, player2) {
+  // Якщо не вказано другого гравця, створюємо бота
+  if (!player2 || player2.trim() === '') {
+    const botNames = ["Teemo", "Yasuo", "Master Yi", "Дракон", "Барон", "Мініон"];
+    player2 = getRandomElement(botNames);
+  }
+  
+  // Очищаємо імена від @ символів
+  player1 = player1.replace('@', '').trim();
+  player2 = player2.replace('@', '').trim();
+  
+  // Генеруємо випадкові характеристики бою
+  const weapon1 = getRandomElement(duelWeapons);
+  const weapon2 = getRandomElement(duelWeapons);
+  const action = getRandomElement(duelActions);
+  const outcome = getRandomElement(duelOutcomes);
+  
+  // Визначаємо переможця (50/50 шанс)
+  const winner = Math.random() < 0.5 ? player1 : player2;
+  const loser = winner === player1 ? player2 : player1;
+  
+  // Генеруємо повідомлення
+  const battleMessage = `${weapon1} ${player1} VS ${player2} ${weapon2}`;
+  const actionMessage = `${winner} ${action}!`;
+  const resultMessage = `Переможець: ${winner}! ${outcome}`;
+  
+  return {
+    battle: battleMessage,
+    action: actionMessage,
+    result: resultMessage,
+    winner: winner,
+    loser: loser
+  };
+}
+
+// Функція для гри в слоти
+function playSlots() {
+  // Генеруємо 3 випадкові символи
+  const reel1 = getRandomElement(slotSymbols);
+  const reel2 = getRandomElement(slotSymbols);
+  const reel3 = getRandomElement(slotSymbols);
+  
+  const combination = `${reel1} ${reel2} ${reel3}`;
+  
+  // Перевіряємо результат
+  let result;
+  if (reel1 === reel2 && reel2 === reel3) {
+    // Всі три символи однакові
+    if (reel1 === "💎" || reel1 === "7️⃣") {
+      result = { ...slotResults.jackpot, combination };
+    } else {
+      result = { ...slotResults.triple, combination };
+    }
+  } else if (reel1 === reel2 || reel2 === reel3 || reel1 === reel3) {
+    // Два символи однакові
+    result = { ...slotResults.double, combination };
+  } else {
+    // Програш
+    result = { ...slotResults.lose, combination };
+  }
+  
+  return result;
+}
+
 // Функція для отримання випадкового елемента з масиву
 function getRandomElement(array) {
   return array[Math.floor(Math.random() * array.length)];
@@ -205,6 +308,28 @@ app.get("/random-both", (req, res) => {
   res.type("text/plain").send(message);
 });
 
+// Новий ендпойнт для слотів
+app.get("/slots", (req, res) => {
+  const result = playSlots();
+  const message = `${result.combination} | ${result.message}`;
+  
+  console.log(`Слоти: ${message}`);
+  res.type("text/plain").send(message);
+});
+
+// Новий ендпойнт для дуелі
+app.get("/duel", (req, res) => {
+  // Отримуємо параметри з query string
+  const player1 = req.query.p1 || req.query.player1 || "Гравець1";
+  const player2 = req.query.p2 || req.query.player2 || "";
+  
+  const duel = createDuel(player1, player2);
+  const message = `${duel.battle} | ${duel.action} | ${duel.result}`;
+  
+  console.log(`Дуель: ${message}`);
+  res.type("text/plain").send(message);
+});
+
 // Тестові ендпойнти JSON
 app.get("/api/random-champion", (req, res) => {
   const champion = getRandomElement(champions);
@@ -234,22 +359,58 @@ app.get("/api/random-both", (req, res) => {
   });
 });
 
+// JSON ендпойнт для слотів
+app.get("/api/slots", (req, res) => {
+  const result = playSlots();
+  res.json({ 
+    combination: result.combination,
+    result: result.message,
+    multiplier: result.multiplier,
+    timestamp: new Date().toISOString()
+  });
+});
+
+// JSON ендпойнт для дуелі
+app.get("/api/duel", (req, res) => {
+  const player1 = req.query.p1 || req.query.player1 || "Гравець1";
+  const player2 = req.query.p2 || req.query.player2 || "";
+  
+  const duel = createDuel(player1, player2);
+  res.json({ 
+    battle: duel.battle,
+    action: duel.action,
+    result: duel.result,
+    winner: duel.winner,
+    loser: duel.loser,
+    timestamp: new Date().toISOString()
+  });
+});
+
 // Головна сторінка
 app.get("/", (req, res) => {
   res.send(`
-    <h1>🎮 Nightbot Champion & Fortune API</h1>
+    <h1>🎮 Nightbot Champion, Fortune, Slots & Duel API</h1>
     <p>API працює!</p>
     <h2>Ендпойнти для Nightbot:</h2>
     <ul>
       <li><a href="/random-champion">Випадковий чемпіон</a></li>
       <li><a href="/random-fortune">Випадкове пророцтво долі</a></li>
       <li><a href="/random-both">Чемпіон + Доля</a></li>
+      <li><a href="/slots">🎰 Слоти 🎰</a></li>
+      <li><a href="/duel?p1=Petro&p2=Ivan">⚔️ Дуель ⚔️</a></li>
     </ul>
     <h2>JSON API для тестування:</h2>
     <ul>
       <li><a href="/api/random-champion">JSON - Чемпіон</a></li>
       <li><a href="/api/random-fortune">JSON - Пророцтво</a></li>
       <li><a href="/api/random-both">JSON - Комбо</a></li>
+      <li><a href="/api/slots">JSON - Слоти</a></li>
+      <li><a href="/api/duel?p1=Petro&p2=Ivan">JSON - Дуель</a></li>
+    </ul>
+    <h2>Приклади використання дуелі:</h2>
+    <ul>
+      <li><code>/duel?p1=Петro</code> - дуель з ботом</li>
+      <li><code>/duel?p1=Petro&p2=Ivan</code> - дуель між гравцями</li>
     </ul>
   `);
 });
@@ -260,5 +421,7 @@ app.listen(PORT, () => {
   console.log(`   Чемпіон: http://localhost:${PORT}/random-champion`);
   console.log(`   Доля: http://localhost:${PORT}/random-fortune`);
   console.log(`   Комбо: http://localhost:${PORT}/random-both`);
+  console.log(`   🎰 Слоти: http://localhost:${PORT}/slots`);
+  console.log(`   ⚔️ Дуель: http://localhost:${PORT}/duel?p1=USER&p2=OPPONENT`);
   console.log(`\nДля тестування відкрийте: http://localhost:${PORT}`);
 });
