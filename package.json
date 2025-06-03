@@ -1,0 +1,23 @@
+{
+  "name": "nightbot-champion-api",
+  "version": "1.0.0",
+  "description": "API для Nightbot що повертає випадкових чемпіонів League of Legends",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js",
+    "dev": "node server.js",
+    "test": "node server.js"
+  },
+  "keywords": [
+    "nightbot",
+    "twitch",
+    "league-of-legends",
+    "api",
+    "bot"
+  ],
+  "author": "Your Name",
+  "license": "MIT",
+  "dependencies": {
+    "express": "^4.21.2"
+  }
+}

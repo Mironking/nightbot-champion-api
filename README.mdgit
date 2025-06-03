@@ -1,0 +1,1 @@
+"# nightbot-champion-api"  initgit add README.mdgit commit -m "first commit"git branch -M maingit remote add origin https://github.com/Mironking/nightbot-champion-api.gitgit push -u origin main
